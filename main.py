@@ -1,7 +1,7 @@
 import zipfile
 from zipfile import ZipFile, is_zipfile
 
-from PIL import Image, PngImagePlugin
+from PIL import Image
 import pytesseract
 import cv2 as cv
 import numpy as np
@@ -17,7 +17,7 @@ source_images = []
 filename = 'readonly/small_img.zip'
 
 # get user input
-to_find = input("Enter word do you want to find: ").strip() or "Christopher" 
+to_find = input("Enter word do you want to find: ").strip() or "Christopher"
 print("Searching for '{}' in image files. Grab a coffee, this may take a while...".format(to_find))
 
 # check we are actually using a zipfile
@@ -40,7 +40,18 @@ with ZipFile(filename) as zipimgs:
 # Find the letters
 for f in source_images:
     print("Searching for '{}' in file {}...".format(to_find, f['file']))
-    f['txt'] = pytesseract.image_to_string(f['img'])
-    if to_find.lower() in f['txt'].lower():
-        print("Results found in file {}".format(f['file']))
+    #f['txt'] = pytesseract.image_to_string(f['img'])
+# if to_find.lower() in f['txt'].lower():
+#     print("Results found in file {}".format(f['file']))
+    print("Running face detection on file {}...".format(f['file']))
+    #bgr_img = f['img'] # np.array(f['img'])  # [::-1].copy()
+    bgr_img = cv.cvtColor(np.array(f['img']), cv.COLOR_RGB2BGR) 
+    faces = face_cascade.detectMultiScale(bgr_img,
+                                          scaleFactor=1.3,
+                                          minSize=(50, 50),
+                                          minNeighbors=5)
+    print("Found {0} faces".format(len(faces)))
 
+    for (x, y, w, h) in faces:
+        cv.rectangle(bgr_img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        status = cv.imwrite('faces_detected-{}.jpg'.format(f['file'].split('.')[0]), bgr_img)
